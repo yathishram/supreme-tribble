@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { users } from "../db/users.db";
 import bcrypt from "bcrypt";
+import { CommonTypes } from "../types/common.types";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
@@ -24,12 +25,8 @@ export const loginMiddleware = (
     if (err || !passwordMatch) {
       return res.status(401).json({ message: "Invalid Password" });
     }
-
-    // Generate a JWT token
-    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: "1h" });
-
     // Store user information and token in the request object
-    req.user = user;
+    req.user = user as CommonTypes.User;
 
     next();
   });
@@ -47,30 +44,25 @@ export const verifyToken = (
     return res.status(401).json({ message: "No token provided" });
   }
 
-  jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
+  // Get the user information from the token
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Invalid token" });
     }
 
-    req.user = decoded; // Store user information in the request object
+    const user = users.find(
+      (user) =>
+        user.username === (decoded as CommonTypes.JwtUserPayload)?.username
+    );
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    // Store user information and token in the request object
+    req.user = user as CommonTypes.User;
+
     next();
   });
-};
-
-// Middleware for checking if a user exists
-export const checkUserExists = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const { username } = req.body;
-
-  // Check if the user exists in your database
-  const userExists = users.some((user) => user.username === username);
-
-  if (!userExists) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
-  next();
 };

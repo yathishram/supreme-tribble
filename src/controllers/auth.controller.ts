@@ -4,8 +4,31 @@ import jwt from "jsonwebtoken";
 import { users } from "../db/users.db";
 import { CommonTypes } from "../types/common.types";
 import { v4 as uuidv4 } from "uuid";
+import { SecretManagerUtils } from "../utils/secret-manager.utils";
+import { CommonConstants } from "../types/common.constants";
 
 export class AuthController {
+  private secretManager: SecretManagerUtils;
+  constructor() {
+    this.secretManager = new SecretManagerUtils();
+  }
+
+  signJwtForUser = (user: CommonTypes.User) => {
+    const token = jwt.sign(
+      {
+        username: user.username,
+
+        id: user.id,
+      },
+      process.env.JWT_SECRET as string,
+      {
+        expiresIn: CommonConstants.JWT_EXPIRATION,
+      }
+    );
+
+    return token;
+  };
+
   register = (req: Request, res: Response) => {
     try {
       const { user } = req.body;
@@ -16,7 +39,9 @@ export class AuthController {
       }
 
       // Hash the password
-      const hashedPassword = bcrypt.hashSync(user.password, 10);
+      const hashedPassword = this.secretManager.generateHashForString(
+        user.password
+      );
 
       // Create the user
       const newUser: CommonTypes.User = {
@@ -37,13 +62,7 @@ export class AuthController {
       users.push(newUser);
 
       // Create a JWT token
-      const token = jwt.sign(
-        { username: newUser.username },
-        process.env.JWT_SECRET as string,
-        {
-          expiresIn: "1h",
-        }
-      );
+      const token = this.signJwtForUser(newUser);
 
       // Send the token back to the user
       return res.status(201).json({
@@ -74,14 +93,9 @@ export class AuthController {
 
   login = (req: Request, res: Response) => {
     try {
-      const { username } = req.body;
+      const user = req.user as CommonTypes.User;
 
-      const user: CommonTypes.User = users.find(
-        (u: CommonTypes.User) => u.username === username
-      )!;
-      const token = jwt.sign({ username }, process.env.JWT_SECRET as string, {
-        expiresIn: "1h",
-      });
+      const token = this.signJwtForUser(user);
 
       res.status(200).json({
         message: "User logged in successfully",

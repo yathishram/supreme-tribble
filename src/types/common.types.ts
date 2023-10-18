@@ -17,4 +17,11 @@ export namespace CommonTypes {
     username: string;
     password: string;
   };
+
+  export type JwtUserPayload = {
+    username: string;
+    id: string;
+    iat: number;
+    exp: number;
+  };
 }

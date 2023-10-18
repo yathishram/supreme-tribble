@@ -1,10 +1,6 @@
 import { Express, Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
-import {
-  checkUserExists,
-  loginMiddleware,
-  verifyToken,
-} from "../middlewares/auth.middlewares";
+import { loginMiddleware } from "../middlewares/auth.middlewares";
 import {
   validateLoginInput,
   validateRegisterInput,
@@ -34,17 +30,8 @@ export class AuthRouter {
       loginMiddleware,
       this.authController.login
     );
-    this.authRouter.get("/protected", verifyToken, (req, res) => {
-      try {
-        res.status(200).send({
-          message: "You are authorized to see this message.",
-        });
-      } catch (err) {
-        res.send(err);
-      }
-    });
 
-    this.app.use("/api/v1/user", this.authRouter);
+    this.app.use("/api/v1/auth", this.authRouter);
   };
 
   authRouterConfig = () => {

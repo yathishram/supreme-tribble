@@ -1,10 +1,7 @@
 import { Express, Router } from "express";
-import {
-  checkUserExists,
-  loginMiddleware,
-  verifyToken,
-} from "../middlewares/auth.middlewares";
+import { verifyToken } from "../middlewares/auth.middlewares";
 import { NewsController } from "../controllers/news.controller";
+import { apiLimiter } from "../middlewares/rate-limiter.middleware";
 
 export class NewsRouter {
   app: Express;
@@ -19,19 +16,48 @@ export class NewsRouter {
   }
 
   newsRoutes = () => {
-    this.newsRouter.get("/news", verifyToken, this.newsController.getNews);
-    this.newsRouter.get("/news/:search", this.newsController.searchNews);
-    this.newsRouter.put(
-      "/news/preferences",
-      verifyToken,
-      this.newsController.updatePreferences
-    );
     this.newsRouter.get(
-      "/news/preferences",
+      "",
+      verifyToken,
+      apiLimiter,
+      this.newsController.getNews
+    );
+
+    this.newsRouter.get(
+      "/preferences",
       verifyToken,
       this.newsController.getPreferences
     );
-    this.app.use("/api/v1", this.newsRouter);
+
+    this.newsRouter.put(
+      "/preferences",
+      verifyToken,
+      this.newsController.updatePreferences
+    );
+
+    this.newsRouter.post(
+      "/favorites",
+      verifyToken,
+      this.newsController.addFavorites
+    );
+
+    this.newsRouter.get(
+      "/favorites",
+      verifyToken,
+      this.newsController.getFavorites
+    );
+
+    this.newsRouter.post("/read", verifyToken, this.newsController.addReadNews);
+
+    this.newsRouter.get("/read", verifyToken, this.newsController.getReadNews);
+
+    this.newsRouter.get(
+      "/:search",
+      verifyToken,
+      this.newsController.searchNews
+    );
+
+    this.app.use("/api/v1/news", this.newsRouter);
   };
 
   newsRouterConfig = () => {

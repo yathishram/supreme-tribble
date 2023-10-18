@@ -18,7 +18,7 @@ export class AppConfig {
     this.app.use(bodyParser.json());
     this.app.use(bodyParser.urlencoded({ extended: true }));
     this.app.use(cors());
-    this.app.set("trust proxy", true);
+    this.app.set("trust proxy", 1);
     this.app.use(
       session({
         secret: process.env.JWT_SECRET!,

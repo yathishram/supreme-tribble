@@ -1,12 +1,19 @@
 import { Request, Response } from "express";
 import { users } from "../db/users.db";
 import axios from "axios"; // Import Axios
+import { NewsService } from "../services/news.cache.service";
 
 require("dotenv").config();
 
 export class NewsController {
-  private newsAPI: any;
+  private newsService: NewsService = new NewsService();
 
+  /**
+   *  Get the user's preferences
+   * @param req
+   * @param res
+   * @returns  User's preferences
+   */
   getPreferences = (req: Request, res: Response) => {
     try {
       const { username } = req.user as any;
@@ -31,6 +38,12 @@ export class NewsController {
     }
   };
 
+  /**
+   *  Update the user's preferences
+   * @param req
+   * @param res
+   * @returns  Updated user's preferences
+   */
   updatePreferences = (req: Request, res: Response) => {
     try {
       const { username } = req.user as any;
@@ -58,6 +71,12 @@ export class NewsController {
     }
   };
 
+  /**
+   *  Get the news based on the user's preferences
+   * @param req
+   * @param res
+   * @returns  News based on the user's preferences
+   */
   getNews = async (req: Request, res: Response) => {
     try {
       const { username } = req.user as any;
@@ -74,7 +93,7 @@ export class NewsController {
             params: {
               q: "technology",
               language: "en",
-              apiKey: process.env.NEWS_API_KEY, // Replace with your News API key
+              apiKey: process.env.NEWS_API_KEY,
             },
           }
         );
@@ -87,30 +106,15 @@ export class NewsController {
         });
       }
 
-      const newsPromises = user.preferences.map(async (preference: string) => {
-        const newsResponse = await axios.get(
-          "https://newsapi.org/v2/everything",
-          {
-            params: {
-              q: preference,
-              apiKey: process.env.NEWS_API_KEY, // Replace with your News API key
-            },
-          }
-        );
-
-        return {
-          [preference]: newsResponse.data.articles,
-        };
-      });
-
-      const newsData = await Promise.all(newsPromises);
-
-      const responseData = Object.assign({}, ...newsData);
+      const newsData = await this.newsService.fetchNewsArticles(
+        user.id,
+        user.preferences
+      );
 
       return res.status(200).json({
         message: "News retrieved successfully",
         data: {
-          news: responseData,
+          news: newsData,
         },
       });
     } catch (err) {
@@ -121,6 +125,12 @@ export class NewsController {
     }
   };
 
+  /**
+   *  Search for news based on the query
+   * @param req
+   * @param res
+   * @returns  News based on the query
+   */
   searchNews = async (req: Request, res: Response) => {
     try {
       const { search } = req.params;
@@ -149,6 +159,128 @@ export class NewsController {
       console.error(err);
       return res.status(500).json({
         message: "Error while getting news",
+      });
+    }
+  };
+
+  /**
+   *  Add favorites to the user's favorites
+   * @param req
+   * @param res
+   * @returns  Updated user's favorites
+   */
+  addFavorites = async (req: Request, res: Response) => {
+    try {
+      const { username } = req.user as any;
+      const user = users.find((user) => user.username === username);
+      if (user) {
+        user.favorites = [...user.favorites, ...req.body.favorites];
+        return res.status(200).json({
+          message: "Favorites updated successfully",
+          data: {
+            favorites: user.favorites,
+          },
+        });
+      } else {
+        return res.status(404).json({ message: "User not found" });
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({
+        message: ` 
+                Error while updating favorites ${err} 
+                `,
+      });
+    }
+  };
+
+  /**
+   *  Get the user's favorites
+   * @param req
+   * @param res
+   * @returns   User's favorites
+   */
+  getFavorites = (req: Request, res: Response) => {
+    try {
+      const { username } = req.user as any;
+      const user = users.find((user) => user.username === username);
+      if (user) {
+        return res.status(200).json({
+          message: "Favorites retrieved successfully",
+          data: {
+            favorites: user.favorites,
+          },
+        });
+      } else {
+        return res.status(404).json({ message: "User not found" });
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({
+        message: `
+                Error while getting favorites ${err}
+                `,
+      });
+    }
+  };
+
+  /**
+   *  Add read news to the user's read news
+   * @param req
+   * @param res
+   * @returns  Updated user's read news
+   */
+  addReadNews = async (req: Request, res: Response) => {
+    try {
+      const { username } = req.user as any;
+      const user = users.find((user) => user.username === username);
+      if (user) {
+        user.read = [...user.read, ...req.body.read];
+        return res.status(200).json({
+          message: "Read updated successfully",
+          data: {
+            read: user.read,
+          },
+        });
+      } else {
+        return res.status(404).json({ message: "User not found" });
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({
+        message: ` 
+                Error while updating read ${err} 
+                `,
+      });
+    }
+  };
+
+  /**
+   *  Get the user's read news
+   * @param req
+   * @param res
+   * @returns   User's read news
+   */
+  getReadNews = (req: Request, res: Response) => {
+    try {
+      const { username } = req.user as any;
+      const user = users.find((user) => user.username === username);
+      if (user) {
+        return res.status(200).json({
+          message: "Read retrieved successfully",
+          data: {
+            read: user.read,
+          },
+        });
+      } else {
+        return res.status(404).json({ message: "User not found" });
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({
+        message: `
+                Error while getting read ${err}
+                `,
       });
     }
   };
