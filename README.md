@@ -59,7 +59,7 @@ All the APIs have the prefix
 #### Register User
 
 ```http
-  POST /user/register
+  POST /auth/register
 ```
 
 Request Body
@@ -100,7 +100,7 @@ Response:
 #### Login User
 
 ```http
-  POST /user/login
+  POST /auth/login
 ```
 
 ```http
@@ -233,6 +233,100 @@ Response:
     
     }]
   }
+}
+```
+
+#### Add Favorite News
+
+```http
+  POST /news/favorite
+```
+
+Request
+
+```http
+{
+    "favorites": [
+        "url"
+    ]
+}
+
+Response:
+
+```http
+{
+    "message": "Favorites updated successfully",
+    "data": {
+        "favorites": [
+            "https://www.wired.com/story/have-a-nice-future-podcast-24/"
+        ]
+    }
+}
+```
+
+#### Get Favorite News
+
+```http
+  GET /news/favorite
+```
+
+Response:
+
+```http
+{
+    "message": "Favorites retrieved successfully",
+    "data": {
+        "favorites": [
+            "https://www.wired.com/story/have-a-nice-future-podcast-24/"
+        ]
+    }
+}
+```
+
+#### Add Read News
+
+```http
+  POST /news/read
+```
+
+Request
+
+```http
+{
+    "read": [
+        "url"
+    ]
+}
+
+Response:
+
+```http
+{
+    "message": "Read updated successfully",
+    "data": {
+        "read": [
+            "https://www.wired.com/story/have-a-nice-future-podcast-24/"
+        ]
+    }
+}
+```
+
+#### Get Read News
+
+```http
+  GET /news/read
+```
+
+Response:
+
+```http
+{
+    "message": "Read retrieved successfully",
+    "data": {
+        "read": [
+            "https://www.wired.com/story/have-a-nice-future-podcast-24/"
+        ]
+    }
 }
 ```
 
