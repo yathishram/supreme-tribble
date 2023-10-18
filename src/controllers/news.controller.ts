@@ -2,12 +2,14 @@ import { Request, Response } from "express";
 import { users } from "../db/users.db";
 import axios from "axios"; // Import Axios
 import { NewsService } from "../services/news.cache.service";
+import { AppResponseService } from "../services/app-response.service";
+import { logger } from "../services/logger.service";
 
 require("dotenv").config();
 
 export class NewsController {
   private newsService: NewsService = new NewsService();
-
+  private appResponseService: AppResponseService = new AppResponseService();
   /**
    *  Get the user's preferences
    * @param req
@@ -19,22 +21,25 @@ export class NewsController {
       const { username } = req.user as any;
       const user = users.find((user) => user.username === username);
       if (user) {
-        return res.status(200).json({
-          message: "Preferences retrieved successfully",
-          data: {
+        return this.appResponseService.sendSuccess(
+          res,
+          {
             preferences: user.preferences,
           },
-        });
+          "Preferences retrieved successfully",
+          200
+        );
       } else {
-        return res.status(404).json({ message: "User not found" });
+        return this.appResponseService.sendNotFound(res, "User not found");
       }
     } catch (err) {
-      console.log(err);
-      return res.status(500).json({
-        message: `
+      logger.error(err);
+      return this.appResponseService.sendError(
+        res,
+        `
                 Error while getting preferences ${err}
-                `,
-      });
+                `
+      );
     }
   };
 
@@ -52,22 +57,25 @@ export class NewsController {
         // Take old preferences and update them with the new preferences
         user.preferences = [...user.preferences, ...req.body.preferences];
         // Update the user's preferences
-        return res.status(200).json({
-          message: "Preferences updated successfully",
-          data: {
+        return this.appResponseService.sendSuccess(
+          res,
+          {
             preferences: user.preferences,
           },
-        });
+          "Preferences updated successfully",
+          200
+        );
       } else {
-        return res.status(404).json({ message: "User not found" });
+        return this.appResponseService.sendNotFound(res, "User not found");
       }
     } catch (err) {
-      console.log(err);
-      return res.status(500).json({
-        message: `
+      logger.error(err);
+      return this.appResponseService.sendError(
+        res,
+        `
                 Error while updating preferences ${err}
-                `,
-      });
+                `
+      );
     }
   };
 
@@ -83,7 +91,7 @@ export class NewsController {
       const user = users.find((user) => user.username === username);
 
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return this.appResponseService.sendNotFound(res, "User not found");
       }
 
       if (user.preferences.length === 0) {
@@ -98,12 +106,14 @@ export class NewsController {
           }
         );
 
-        return res.status(200).json({
-          message: "News retrieved successfully",
-          data: {
+        return this.appResponseService.sendSuccess(
+          res,
+          {
             news: defaultNewsResponse.data.articles,
           },
-        });
+          "News retrieved successfully",
+          200
+        );
       }
 
       const newsData = await this.newsService.fetchNewsArticles(
@@ -111,17 +121,22 @@ export class NewsController {
         user.preferences
       );
 
-      return res.status(200).json({
-        message: "News retrieved successfully",
-        data: {
+      return this.appResponseService.sendSuccess(
+        res,
+        {
           news: newsData,
         },
-      });
+        "News retrieved successfully",
+        200
+      );
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({
-        message: "Error while getting news",
-      });
+      logger.error(err);
+      return this.appResponseService.sendError(
+        res,
+        `
+                Error while getting news ${err}
+                `
+      );
     }
   };
 
@@ -136,7 +151,10 @@ export class NewsController {
       const { search } = req.params;
 
       if (!search) {
-        return res.status(400).json({ message: "Query is required" });
+        return this.appResponseService.sendError(
+          res,
+          "Please provide a search query"
+        );
       }
 
       const newsResponse = await axios.get(
@@ -149,17 +167,22 @@ export class NewsController {
         }
       );
 
-      return res.status(200).json({
-        message: "News retrieved successfully",
-        data: {
+      return this.appResponseService.sendSuccess(
+        res,
+        {
           news: newsResponse.data.articles,
         },
-      });
+        "News retrieved successfully",
+        200
+      );
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({
-        message: "Error while getting news",
-      });
+      logger.error(err);
+      return this.appResponseService.sendError(
+        res,
+        `
+                Error while searching news ${err}
+                `
+      );
     }
   };
 
@@ -175,22 +198,25 @@ export class NewsController {
       const user = users.find((user) => user.username === username);
       if (user) {
         user.favorites = [...user.favorites, ...req.body.favorites];
-        return res.status(200).json({
-          message: "Favorites updated successfully",
-          data: {
+        return this.appResponseService.sendSuccess(
+          res,
+          {
             favorites: user.favorites,
           },
-        });
+          "Favorites updated successfully",
+          200
+        );
       } else {
-        return res.status(404).json({ message: "User not found" });
+        return this.appResponseService.sendNotFound(res, "User not found");
       }
     } catch (err) {
-      console.log(err);
-      return res.status(500).json({
-        message: ` 
-                Error while updating favorites ${err} 
-                `,
-      });
+      logger.error(err);
+      return this.appResponseService.sendError(
+        res,
+        `
+                Error while updating favorites ${err}
+                `
+      );
     }
   };
 
@@ -205,22 +231,25 @@ export class NewsController {
       const { username } = req.user as any;
       const user = users.find((user) => user.username === username);
       if (user) {
-        return res.status(200).json({
-          message: "Favorites retrieved successfully",
-          data: {
+        return this.appResponseService.sendSuccess(
+          res,
+          {
             favorites: user.favorites,
           },
-        });
+          "Favorites retrieved successfully",
+          200
+        );
       } else {
-        return res.status(404).json({ message: "User not found" });
+        return this.appResponseService.sendNotFound(res, "User not found");
       }
     } catch (err) {
-      console.log(err);
-      return res.status(500).json({
-        message: `
+      logger.error(err);
+      return this.appResponseService.sendError(
+        res,
+        `
                 Error while getting favorites ${err}
-                `,
-      });
+                `
+      );
     }
   };
 
@@ -236,22 +265,25 @@ export class NewsController {
       const user = users.find((user) => user.username === username);
       if (user) {
         user.read = [...user.read, ...req.body.read];
-        return res.status(200).json({
-          message: "Read updated successfully",
-          data: {
+        return this.appResponseService.sendSuccess(
+          res,
+          {
             read: user.read,
           },
-        });
+          "Read updated successfully",
+          200
+        );
       } else {
-        return res.status(404).json({ message: "User not found" });
+        return this.appResponseService.sendNotFound(res, "User not found");
       }
     } catch (err) {
-      console.log(err);
-      return res.status(500).json({
-        message: ` 
-                Error while updating read ${err} 
-                `,
-      });
+      logger.error(err);
+      return this.appResponseService.sendError(
+        res,
+        `
+                Error while updating read ${err}
+                `
+      );
     }
   };
 
@@ -266,22 +298,25 @@ export class NewsController {
       const { username } = req.user as any;
       const user = users.find((user) => user.username === username);
       if (user) {
-        return res.status(200).json({
-          message: "Read retrieved successfully",
-          data: {
+        return this.appResponseService.sendSuccess(
+          res,
+          {
             read: user.read,
           },
-        });
+          "Read retrieved successfully",
+          200
+        );
       } else {
-        return res.status(404).json({ message: "User not found" });
+        return this.appResponseService.sendNotFound(res, "User not found");
       }
     } catch (err) {
-      console.log(err);
-      return res.status(500).json({
-        message: `
+      logger.error(err);
+      return this.appResponseService.sendError(
+        res,
+        `
                 Error while getting read ${err}
-                `,
-      });
+                `
+      );
     }
   };
 }

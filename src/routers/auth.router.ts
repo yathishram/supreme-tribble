@@ -7,7 +7,7 @@ import {
 } from "../middlewares/validation.middlwares";
 
 export class AuthRouter {
-  app: Express;
+  public app: Express;
 
   authController: AuthController;
   authRouter: Router;

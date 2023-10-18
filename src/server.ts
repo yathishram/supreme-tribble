@@ -37,7 +37,7 @@ export class Server {
     });
   };
 
-  stopServer = () => {
+  stopServerOnControl = () => {
     process.on("SIGINT", async () => {
       console.log("Closing DB connection.");
       console.info("SIGINT signal received.");
@@ -45,6 +45,26 @@ export class Server {
       this.server.close(async () => {
         console.log("Http server closed.");
         process.exit(0);
+      });
+    });
+  };
+
+  stopServer = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!this.server) {
+        console.error("Server is not running.");
+        return reject(new Error("Server is not running."));
+      }
+
+      console.log("Closing http server.");
+      this.server.close((err: any) => {
+        if (err) {
+          console.error("Error closing the server:", err);
+          return reject(err);
+        }
+
+        console.log("Http server closed.");
+        resolve();
       });
     });
   };

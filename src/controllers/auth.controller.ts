@@ -6,11 +6,15 @@ import { CommonTypes } from "../types/common.types";
 import { v4 as uuidv4 } from "uuid";
 import { SecretManagerUtils } from "../utils/secret-manager.utils";
 import { CommonConstants } from "../types/common.constants";
+import { AppResponseService } from "../services/app-response.service";
+import { logger } from "../services/logger.service";
 
 export class AuthController {
   private secretManager: SecretManagerUtils;
+  private appResponseService: AppResponseService;
   constructor() {
     this.secretManager = new SecretManagerUtils();
+    this.appResponseService = new AppResponseService();
   }
 
   signJwtForUser = (user: CommonTypes.User) => {
@@ -35,7 +39,10 @@ export class AuthController {
 
       const existingUser = users.find((u) => u.username === user.username);
       if (existingUser) {
-        return res.status(409).json({ message: "User already exists" });
+        return this.appResponseService.sendAlreadyExistsError(
+          res,
+          "User already exists"
+        );
       }
 
       // Hash the password
@@ -65,29 +72,34 @@ export class AuthController {
       const token = this.signJwtForUser(newUser);
 
       // Send the token back to the user
-      return res.status(201).json({
-        message: "User created successfully",
-        token,
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-          email: newUser.email,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          preferences: newUser.preferences,
-          favorites: newUser.favorites,
-          read: newUser.read,
-          created_at: newUser.created_at,
-          last_login: newUser.last_login,
+      return this.appResponseService.sendSuccess(
+        res,
+        {
+          token,
+          user: {
+            id: newUser.id,
+            username: newUser.username,
+            email: newUser.email,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            preferences: newUser.preferences,
+            favorites: newUser.favorites,
+            read: newUser.read,
+            created_at: newUser.created_at,
+            last_login: newUser.last_login,
+          },
         },
-      });
+        "User created successfully",
+        201
+      );
     } catch (err) {
-      console.log(err);
-      return res.status(500).json({
-        message: `
+      logger.error(err);
+      return this.appResponseService.sendError(
+        res,
+        `
         Error while registering user ${err}
-      `,
-      });
+      `
+      );
     }
   };
 
@@ -97,29 +109,34 @@ export class AuthController {
 
       const token = this.signJwtForUser(user);
 
-      res.status(200).json({
-        message: "User logged in successfully",
-        token,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          preferences: user.preferences,
-          favorites: user.favorites,
-          read: user.read,
-          created_at: user.created_at,
-          last_login: user.last_login,
+      return this.appResponseService.sendSuccess(
+        res,
+        {
+          token,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            preferences: user.preferences,
+            favorites: user.favorites,
+            read: user.read,
+            created_at: user.created_at,
+            last_login: user.last_login,
+          },
         },
-      });
+        "User logged in successfully",
+        200
+      );
     } catch (err) {
-      console.log(err);
-      return res.status(500).json({
-        message: `
+      logger.error(err);
+      return this.appResponseService.sendError(
+        res,
+        `
         Error while logging in user ${err}
-      `,
-      });
+      `
+      );
     }
   };
 }

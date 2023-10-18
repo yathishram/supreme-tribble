@@ -3,8 +3,11 @@ import jwt from "jsonwebtoken";
 import { users } from "../db/users.db";
 import bcrypt from "bcrypt";
 import { CommonTypes } from "../types/common.types";
+import { AppResponseService } from "../services/app-response.service";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
+
+const appResponseService = new AppResponseService();
 
 export const loginMiddleware = (
   req: Request,
@@ -17,13 +20,16 @@ export const loginMiddleware = (
   const user = users.find((user) => user.username === username);
 
   if (!user) {
-    return res.status(401).json({ message: "Invalid Username" });
+    return appResponseService.sendNotFound(res, "User not found");
   }
 
   // Compare the provided password with the stored hashed password
   bcrypt.compare(password, user.password, (err, passwordMatch) => {
     if (err || !passwordMatch) {
-      return res.status(401).json({ message: "Invalid Password" });
+      return appResponseService.sendError(
+        res,
+        `Invalid Passwords ${err ? err : ""}`
+      );
     }
     // Store user information and token in the request object
     req.user = user as CommonTypes.User;
@@ -41,14 +47,14 @@ export const verifyToken = (
   const token = req.headers.authorization?.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ message: "No token provided" });
+    return appResponseService.sendUnauthorizedError(res, "No token provided");
   }
 
   // Get the user information from the token
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(401).json({ message: "Invalid token" });
+      return appResponseService.sendUnauthorizedError(res, "Invalid token");
     }
 
     const user = users.find(
@@ -57,7 +63,7 @@ export const verifyToken = (
     );
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid token" });
+      return appResponseService.sendUnauthorizedError(res, "Invalid token");
     }
 
     // Store user information and token in the request object
